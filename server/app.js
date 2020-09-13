@@ -85,22 +85,29 @@ app.post('/signup', (req, res, next) => {
   let username = req.body.username;
   let password = req.body.password;
 
-
-  // send that information to user.create(username, password)
-  models.Users.create(username, password)
-    .then((data) => {
-      return models.Model.create(data);
+  debugger;
+  return models.Users.get({username})
+    .then((user) => {
+      if (user) {
+        throw user;
+      } else {
+        return models.Users.create({username, password});
+      }
     })
-    .catch((err) => {
-      console.error(err);
+    .then((results) => {
+      return models.Sessions.update({hash: req.session.hash}, {userId: results.insertId});
     })
-    .then((data) => {
-      res.end();
-      next();
+    .then(() => {
+      res.setHeader('/');
+      res.redirect('/');
     })
-    .catch((err) => {
-      console.error(err);
+    .catch((user) => {
+      res.redirect('/signup');
     });
+
+  // res.end();
+  // next();
+  // send that information to user.create(username, password)
 
 });
 //user.create() returns the above object which we then need to store in the database
